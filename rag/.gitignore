@@ -1,0 +1,8 @@
+# Ignore the entire corpus folder
+Corpus/
+
+# Ignore all .ipynb files
+*.ipynb
+
+# Existing entries
+*.pkl
