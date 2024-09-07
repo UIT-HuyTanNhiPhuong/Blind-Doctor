@@ -1,0 +1,8 @@
+
+Công nghệ hỗ trợ cho người khiếm thị:
+1. Phần mềm đọc màn hình: JAWS, NVDA, VoiceOver giúp người dùng nghe nội dung trên màn hình.
+2. Màn hình Braille: Hiển thị văn bản dưới dạng chữ nổi Braille có thể đọc được bằng tay.
+3. Ứng dụng nhận diện đối tượng: Như Be My Eyes, giúp người khiếm thị nhận biết môi trường xung quanh.
+4. Thiết bị đọc sách nói: Cho phép truy cập vào sách và tài liệu dưới dạng âm thanh.
+5. Bàn phím Braille: Giúp nhập liệu nhanh chóng và chính xác hơn.
+    
