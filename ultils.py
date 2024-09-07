@@ -47,6 +47,6 @@ def text2speech(text):
     """Convert text to speech and return the audio data as bytes."""
     tts = gTTS(text, tld='com.vn', lang='vi')
     audio_stream = io.BytesIO()
-    tts.save(audio_stream)
+    # tts.save(audio_stream)
     audio_stream.seek(0)  # Reset stream position
     return audio_stream.getvalue()  # Return audio data as bytes
