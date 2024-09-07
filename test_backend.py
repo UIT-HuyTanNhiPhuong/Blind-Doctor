@@ -6,15 +6,15 @@ import os
 from playsound import playsound
 import torchaudio
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+# from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import torch
 import PyPDF2
 import json
 from ultils import speech2text, text2speech, get_answer
 import base64
-from rag.rag_phase.load_data import load_documents, split_documents
-from rag.rag_phase.create_vectordata import create_embeddings, create_vector_store
-from rag.rag_phase.query_data import create_llm, create_qa_chain
+# from rag.rag_phase.load_data import load_documents, split_documents
+# from rag.rag_phase.create_vectordata import create_embeddings, create_vector_store
+# from rag.rag_phase.query_data import create_llm, create_qa_chain
 
 app = FastAPI()
 
@@ -60,14 +60,18 @@ async def question_answering(file: UploadFile = File(...)):
         answer: str
     """
     # Reading Audio File
-    audio_file = f"/tmp/{file.filename}"
-    with open(audio_file, "wb") as buffer:
+    SAVE_DIRECTORY = "saved_audio"
+    os.makedirs(SAVE_DIRECTORY, exist_ok=True)
+    
+    audio_file_path = os.path.join(SAVE_DIRECTORY, file.filename)
+
+    with open(audio_file_path, "wb") as buffer:
         buffer.write(await file.read())
 
     # Speech-2-Text
-    audio_input, sample_rate = torchaudio.load(audio_file)
+    audio_input, sample_rate = torchaudio.load(audio_file_path)
     transcription = speech2text(speech2text_model, speech2text_tokenizer, audio_input, sample_rate, device)
-    os.remove(audio_file)
+    os.remove(audio_file_path)
 
     # Question-Answering
     # answer, sources = get_answer(question = transcription, 
