@@ -39,7 +39,9 @@ else :
   documents = load_documents('data')
   texts = split_documents(documents)
 
-db = create_vector_store(embeddings, persist_directory, texts)
+db = create_vector_store(embeddings = embeddings, 
+                         persist_directory = persist_directory, 
+                         texts = texts)
 
 # Create LLM and QA chain
 llm = create_llm(quantization="4bit")
