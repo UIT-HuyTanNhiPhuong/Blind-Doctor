@@ -44,7 +44,8 @@ db = create_vector_store(embeddings = embeddings,
                          texts = texts)
 
 # Create LLM and QA chain
-llm = create_llm(quantization="4bit")
+llm = create_llm(model_id = google/gemma-2-9b, 
+                 quantization="4bit")
 retriever = db.as_retriever(search_kwargs={"k": 3})
 qa_chain = create_qa_chain(llm, retriever)
 
