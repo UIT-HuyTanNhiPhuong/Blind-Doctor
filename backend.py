@@ -61,12 +61,15 @@ async def question_answering(file: UploadFile = File(...)):
         answer: str
     """
     # Reading Audio File
-    audio_file = f"/tmp/{file.filename}"
-    with open(audio_file, "wb") as buffer:
+    SAVE_DIRECTORY = "saved_audio"
+    os.makedirs(SAVE_DIRECTORY, exist_ok=True)
+  
+    audio_file_path = os.path.join(SAVE_DIRECTORY, file.filename)
+    with open(audio_file_path, "wb") as buffer:
         buffer.write(await file.read())
 
     # Speech-2-Text
-    audio_input, sample_rate = torchaudio.load(audio_file)
+    audio_input, sample_rate = torchaudio.load(audio_file_path)
     transcription = speech2text(speech2text_model, speech2text_tokenizer, audio_input, sample_rate, device)
     os.remove(audio_file)
 
