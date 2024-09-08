@@ -16,3 +16,4 @@ transformers
 bitsandbytes
 python-multipart
 rank_bm25
+faiss-gpu
