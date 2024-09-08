@@ -17,3 +17,4 @@ langchain-huggingface
 rank_bm25
 qdrant-client
 faiss-gpu
+argparse
