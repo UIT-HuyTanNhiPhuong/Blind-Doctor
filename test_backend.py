@@ -1,5 +1,7 @@
 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from fastapi.responses import JSONResponse
 from gtts import gTTS
 import os
@@ -18,11 +20,21 @@ import base64
 
 app = FastAPI()
 
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Loading S2T model
 global speech2text_model, speech2text_tokenizer, device
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model_id = os.getenv('Speech2Text_PATH')
+model_id = 'nguyenvulebinh/wav2vec2-base-vietnamese-250h'
 speech2text_tokenizer = Wav2Vec2Tokenizer.from_pretrained(model_id)
 speech2text_model = Wav2Vec2ForCTC.from_pretrained(model_id).to(device)
 
@@ -49,34 +61,44 @@ speech2text_model = Wav2Vec2ForCTC.from_pretrained(model_id).to(device)
 # qa_chain = create_qa_chain(llm, retriever)
 
 @app.post("/question-answering/")
-async def question_answering(file: UploadFile = File(...)):
+async def question_answering(audio: UploadFile = File(None), text: str = None):
     """
     Endpoint to generate answer from specific question-context
 
     Args:
-        file (UploadFile): An Audio Question (.mp3)
+        audio (UploadFile): An Audio Question (.mp3 or .wav)
+        text (str): A Text Question
 
     Returns:
         answer: str
     """
-    # Reading Audio File
-    SAVE_DIRECTORY = "saved_audio"
-    os.makedirs(SAVE_DIRECTORY, exist_ok=True)
+    if audio and text:
+        raise HTTPException(status_code=400, detail="Please provide only one input, either audio or text.")
+
+    if audio:
+        # Reading Audio File
+        SAVE_DIRECTORY = "saved_audio"
+        os.makedirs(SAVE_DIRECTORY, exist_ok=True)
     
-    audio_file_path = os.path.join(SAVE_DIRECTORY, file.filename)
+        audio_file_path = os.path.join(SAVE_DIRECTORY, audio.filename)
 
-    with open(audio_file_path, "wb") as buffer:
-        buffer.write(await file.read())
+        with open(audio_file_path, "wb") as buffer:
+            buffer.write(await audio.read())
 
-    # Speech-2-Text
-    audio_input, sample_rate = torchaudio.load(audio_file_path)
-    transcription = speech2text(speech2text_model, speech2text_tokenizer, audio_input, sample_rate, device)
-    os.remove(audio_file_path)
+        # Speech-2-Text
+        audio_input, sample_rate = torchaudio.load(audio_file_path)
+        transcription = speech2text(speech2text_model, speech2text_tokenizer, audio_input, sample_rate, device)
+        os.remove(audio_file_path)
+
+        question = transcription
+    elif text:
+        question = text
+    else:
+        raise HTTPException(status_code=400, detail="Please provide either audio")
 
     # Question-Answering
     # answer, sources = get_answer(question = transcription, 
     #                     qa_chain = qa_chain)
-
     answer = 'Làm gì có câu trả lời nào, đang test mà'
 
     # Text-2-Speech
