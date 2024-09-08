@@ -2,6 +2,12 @@
 
 This project implements a RAG system using LangChain, Hugging Face models, and FAISS for efficient retrieval and question answering.
 
+## Kaggle Notebook
+
+The test cases are implemented in the following Kaggle notebook:
+[RAG System Test Cases](https://www.kaggle.com/code/nnyndaliet123/notebookab65feb771)
+
+
 ## Usage
 
 ### Running the RAG script
@@ -40,6 +46,5 @@ This will run all the test cases defined in the `test_rag.py` file.
 - `rag.py`: The main script containing the RAG implementation.
 - `test_rag.py`: Test cases for the RAG script.
 - `README.md`: This file, containing instructions and information about the project.
-
 
 
