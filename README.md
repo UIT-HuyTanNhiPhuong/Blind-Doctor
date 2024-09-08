@@ -7,7 +7,9 @@ This project implements a RAG system using LangChain, Hugging Face models, and F
 ### Running the RAG script
 
 To run the RAG script, use the following command:
-```python rag.py --json_file <path_to_json_file> --query "<your_query>" [--model_name <model_name>] [--bm25_k <k_value>] [--faiss_k <k_value>] [--faiss_index_path <path>]```
+```
+python rag.py --json_file <path_to_json_file> --query "<your_query>" [--model_name <model_name>] [--bm25_k <k_value>] [--faiss_k <k_value>] [--faiss_index_path <path>]
+```
 
 
 Arguments:
