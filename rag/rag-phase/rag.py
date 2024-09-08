@@ -1,4 +1,3 @@
-%%writefile rag.py
 import os
 import json
 import torch
