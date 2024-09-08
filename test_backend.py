@@ -45,7 +45,7 @@ model, tokenizer = setup_model_and_tokenizer(llm_id)
 llm = create_llm(model, tokenizer)
 
 # Load and process documents
-documents = load_documents_from_json('rag/rag-phase/informations_vinmec.json')
+documents = load_documents_from_json('rag/informations_vinmec.json')
 texts = split_documents(documents)
 
 # Setup embeddings and retrievers
@@ -54,7 +54,7 @@ embeddings = HuggingFaceEmbeddings(model_name=embedding_id)
 ensemble_retriever = setup_retrievers(texts, embeddings, 
                                       bm25_k = 1, 
                                       faiss_k = 1, 
-                                      faiss_index_path = ,)
+                                      faiss_index_path = 'rag/faiss_index')
 
 # Setup QA Chain
 global qa_chain
