@@ -40,7 +40,7 @@ def pdf2text(pdf_path):
 #    playsound('saved_audio/test.mp3')
 
 def get_answer(question, qa_chain):
-    result = qa_chain({"query": question})
+    result = qa_chain.invoke({"query": question})
     return result["result"], result["source_documents"]
 
 def text2speech(text):
