@@ -89,12 +89,12 @@ def setup_retrievers(texts, embeddings):
     return ensemble_retriever
 
 def create_qa_chain(llm, retriever):
-    template = """Sá»­ dá»¥ng thÃ´ng tin sau Ä‘Ã¢y Ä‘á»ƒ tráº£ lá»i cÃ¢u há»i chi tiáº¿t. Náº¿u báº¡n khÃ´ng biáº¿t cÃ¢u tráº£ lá»i, hÃ£y nÃ³i ráº±ng báº¡n khÃ´ng biáº¿t, Ä‘á»«ng cá»‘ táº¡o ra cÃ¢u tráº£ lá»i.
+    template = """Sử dụng thông tin sau đây để trả lời câu hỏi chi tiết. Nếu bạn không biết câu trả lời, hãy nói rằng bạn không biết, đừng cố tạo ra câu trả lời.
 
     {context}
 
-    CÃ¢u há»i: {question}
-    Tráº£ lá»i chi tiáº¿t:"""
+    Câu hỏi: {question}
+    Trả lời chi tiết:"""
 
     PROMPT = PromptTemplate(
         template=template, input_variables=["context", "question"]
