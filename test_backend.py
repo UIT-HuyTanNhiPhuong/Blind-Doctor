@@ -9,6 +9,7 @@ from playsound import playsound
 import torchaudio
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer
 # from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import PyPDF2
 import json
@@ -17,7 +18,7 @@ import base64
 # from rag.rag_phase.load_data import load_documents, split_documents
 # from rag.rag_phase.create_vectordata import create_embeddings, create_vector_store
 # from rag.rag_phase.query_data import create_llm, create_qa_chain
-
+from rag import setup_model_and_tokenizer, create_llm, load_documents_from_json, split_documents, setup_retrievers
 app = FastAPI()
 
 # CORS
@@ -38,27 +39,26 @@ model_id = 'nguyenvulebinh/wav2vec2-base-vietnamese-250h'
 speech2text_tokenizer = Wav2Vec2Tokenizer.from_pretrained(model_id)
 speech2text_model = Wav2Vec2ForCTC.from_pretrained(model_id).to(device)
 
-# Loading RAG-Datbase
-# global qa_chain
+# Set up Model
+llm_id = os.getenv('LLM_PATH') # google/gemma-2-9b
+model, tokenizer = setup_model_and_tokenizer(llm_id)
+llm = create_llm(model, tokenizer)
 
-# embeddings = create_embeddings(os.getenv('MODEL_PATH'))
-# persist_directory = "rag/rag-phase/chroma_db"
-# if os.path.exists(persist_directory) and os.listdir(persist_directory):
-#   print('Database already exists') 
-#   text = None
-# else : 
-#   print(f'Prepare to create database')
-#   documents = load_documents('data')
-#   texts = split_documents(documents)
+# Load and process documents
+documents = load_documents_from_json('rag/rag-phase/informations_vinmec.json')
+texts = split_documents(documents)
 
-# db = create_vector_store(embeddings = embeddings, 
-#                          persist_directory = persist_directory, 
-#                          texts = texts)
+# Setup embeddings and retrievers
+embedding_id = os.getenv('EMBEDDING_PATH') # sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+embeddings = HuggingFaceEmbeddings(model_name=embedding_id)
+ensemble_retriever = setup_retrievers(texts, embeddings, 
+                                      bm25_k = 1, 
+                                      faiss_k = 1, 
+                                      faiss_index_path = ,)
 
-# # Create LLM and QA chain
-# llm = create_llm(quantization="4bit")
-# retriever = db.as_retriever(search_kwargs={"k": 3})
-# qa_chain = create_qa_chain(llm, retriever)
+# Setup QA Chain
+global qa_chain
+qa_chain = create_qa_chain(llm, ensemble_retriever)
 
 @app.post("/question-answering/")
 async def question_answering(audio: UploadFile = File(None), text: str = None):
@@ -96,10 +96,9 @@ async def question_answering(audio: UploadFile = File(None), text: str = None):
     else:
         raise HTTPException(status_code=400, detail="Please provide either audio")
 
-    # Question-Answering
-    # answer, sources = get_answer(question = transcription, 
-    #                     qa_chain = qa_chain)
-    answer = 'Làm gì có câu trả lời nào, đang test mà'
+    Question-Answering
+    answer, sources = get_answer(question = transcription, 
+                        qa_chain = qa_chain)
 
     # Text-2-Speech
     audio_data = text2speech(answer)
