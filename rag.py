@@ -1,14 +1,15 @@
+import argparse
 import os
 import json
 import torch
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
-from langchain_community.llms import HuggingFacePipeline
+from langchain_huggingface import HuggingFacePipeline
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 import numpy as np
@@ -107,100 +108,6 @@ def create_qa_chain(llm, retriever):
         chain_type_kwargs={"prompt": PROMPT}
     )
     return qa_chain
-
-# import argparse
-# import os
-# import json
-# import torch
-# from langchain.docstore.document import Document
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
-# from langchain_community.embeddings import HuggingFaceEmbeddings
-# from langchain_community.vectorstores import FAISS
-# from langchain.retrievers import EnsembleRetriever
-# from langchain_community.retrievers import BM25Retriever
-# from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
-# from langchain_community.llms import HuggingFacePipeline
-# from langchain.chains import RetrievalQA
-# from langchain.prompts import PromptTemplate
-# import numpy as np
-
-# # ... (keep all your existing functions)
-
-# def parse_arguments():
-#     parser = argparse.ArgumentParser(description="RAG model parameters")
-#     parser.add_argument("--json_file", type=str, required=True, help="Path to your JSON file")
-#     parser.add_argument("--model_name", type=str, default="ricepaper/vi-gemma-2b-RAG", help="Name of the model to use")
-#     parser.add_argument("--query", type=str, required=True, help="Query to process")
-#     parser.add_argument("--bm25_k", type=int, default=1, help="Number of documents to retrieve for BM25")
-#     parser.add_argument("--faiss_k", type=int, default=1, help="Number of documents to retrieve for FAISS")
-#     return parser.parse_args()
-
-# def main():
-#     args = parse_arguments()
-
-#     # Load and process documents
-#     documents = load_documents_from_json(args.json_file)
-#     texts = split_documents(documents)
-
-#     # Setup model and tokenizer
-#     model, tokenizer = setup_model_and_tokenizer(args.model_name)
-#     llm = create_llm(model, tokenizer)
-
-#     # Setup embeddings and retrievers
-#     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-#     ensemble_retriever = setup_retrievers(texts, embeddings, args.bm25_k, args.faiss_k)
-
-#     # Create QA chain
-#     qa_chain = create_qa_chain(llm, ensemble_retriever)
-
-#     # Process query
-#     result = qa_chain({"query": args.query})
-
-#     print("CÃ¢u há»i:", args.query)
-#     print("CÃ¢u tráº£ lá»i:")
-#     for doc in result['source_documents']:
-#         print(doc.page_content)
-#         print('---')
-
-# # Update the setup_retrievers function to use the new parameters
-# def setup_retrievers(texts, embeddings, bm25_k, faiss_k):
-#     bm25_texts = [doc.page_content for doc in texts]
-#     bm25_retriever = BM25Retriever.from_texts(bm25_texts, metadatas=[{"source": "bm25"}] * len(bm25_texts))
-#     bm25_retriever.k = bm25_k
-
-#     faiss_index_path = "faiss_index"
-#     faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings)
-
-#     faiss_retriever = faiss_vectorstore.as_retriever(search_kwargs={"k": faiss_k})
-    
-#     ensemble_retriever = EnsembleRetriever(
-#         retrievers=[bm25_retriever, faiss_retriever],
-#         weights=[0.5, 0.5],
-#         score_normalizer=normalize_scores
-#     )
-#     return ensemble_retriever
-
-
-# if __name__ == "__main__":
-#     main()
-
-import argparse
-import os
-import json
-import torch
-from langchain.docstore.document import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain.retrievers import EnsembleRetriever
-from langchain_community.retrievers import BM25Retriever
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
-from langchain_huggingface import HuggingFacePipeline
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
-import numpy as np
-
-# ... (keep other functions as they are)
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="RAG model parameters")
