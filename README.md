@@ -22,7 +22,7 @@ Arguments:
 
 Example:
 ```
-python rag.py --json_file data.json --query "What is the capital of France?" --model_name "ricepaper/vi-gemma-2b-RAG" --bm25_k 2 --faiss_k 2
+python rag.py --json_file data.json --query "Bệnh đau đầu gây hậu quả gì?" --model_name "ricepaper/vi-gemma-2b-RAG" --bm25_k 2 --faiss_k 2
 ```
 
 
