@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from gtts import gTTS
 import os
+from dotenv import load_dotenv
+from huggingface_hub import login
 from playsound import playsound
 import torchaudio
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer
@@ -18,8 +20,12 @@ import base64
 # from rag.rag_phase.load_data import load_documents, split_documents
 # from rag.rag_phase.create_vectordata import create_embeddings, create_vector_store
 # from rag.rag_phase.query_data import create_llm, create_qa_chain
-from rag import setup_model_and_tokenizer, create_llm, load_documents_from_json, split_documents, setup_retrievers
+from rag import setup_model_and_tokenizer, create_llm, load_documents_from_json, split_documents, setup_retrievers, create_qa_chain
 app = FastAPI()
+
+load_dotenv()
+os.environ["HF_API_TOKEN"] = os.getenv("HUGGINGFACE_API_TOKEN")
+login(token=os.environ["HF_API_TOKEN"])
 
 # CORS
 app.add_middleware(
@@ -35,12 +41,11 @@ global speech2text_model, speech2text_tokenizer, device
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model_id = os.getenv('Speech2Text_PATH')
-model_id = 'nguyenvulebinh/wav2vec2-base-vietnamese-250h'
 speech2text_tokenizer = Wav2Vec2Tokenizer.from_pretrained(model_id)
 speech2text_model = Wav2Vec2ForCTC.from_pretrained(model_id).to(device)
 
 # Set up Model
-llm_id = os.getenv('LLM_PATH') # google/gemma-2-9b
+llm_id = os.getenv('LLM_PATH')
 model, tokenizer = setup_model_and_tokenizer(llm_id)
 llm = create_llm(model, tokenizer)
 
@@ -49,7 +54,7 @@ documents = load_documents_from_json('rag/informations_vinmec.json')
 texts = split_documents(documents)
 
 # Setup embeddings and retrievers
-embedding_id = os.getenv('EMBEDDING_PATH') # sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+embedding_id = os.getenv('EMBEDDING_PATH')
 embeddings = HuggingFaceEmbeddings(model_name=embedding_id)
 ensemble_retriever = setup_retrievers(texts, embeddings, 
                                       bm25_k = 1, 
@@ -94,11 +99,11 @@ async def question_answering(audio: UploadFile = File(None), text: str = None):
     elif text:
         question = text
     else:
-        raise HTTPException(status_code=400, detail="Please provide either audio")
+        # raise HTTPException(status_code=400, detail="Please provide either audio or text input.")
+        question = 'Bác sĩ ơi, tôi bị ốm, tôi phải làm gì?' # Temporary question.
 
-    Question-Answering
-    answer, sources = get_answer(question = transcription, 
-                        qa_chain = qa_chain)
+    # Question-Answering
+    answer, sources = get_answer(question = question, qa_chain = qa_chain)
 
     # Text-2-Speech
     audio_data = text2speech(answer)

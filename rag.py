@@ -71,13 +71,13 @@ def normalize_scores(scores):
     return (scores - np.min(scores)) / (np.max(scores) - np.min(scores))
 
 
-def setup_retrievers(texts, embeddings):
+def setup_retrievers(texts, embeddings, bm25_k, faiss_k, faiss_index_path="faiss_index"):
     bm25_texts = [doc.page_content for doc in texts]
     bm25_retriever = BM25Retriever.from_texts(bm25_texts, metadatas=[{"source": "bm25"}] * len(bm25_texts))
     bm25_retriever.k = 1
 
-    faiss_index_path = "faiss_index"
-    faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings)
+    # faiss_index_path = "faiss_index"
+    faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings, allow_dangerous_deserialization=True)
 
     faiss_retriever = faiss_vectorstore.as_retriever(search_kwargs={"k": 1})
     
