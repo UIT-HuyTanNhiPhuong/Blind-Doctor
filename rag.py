@@ -83,8 +83,10 @@ def setup_retrievers(embeddings, faiss_index_path="rag/faiss_index"):
     #     score_normalizer=normalize_scores
     # )
     if os.path.exists(faiss_index_path):
+        print('Loading FAISS')
         faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings, allow_dangerous_deserialization=True)
     else:
+        print('Creating New FAISS')
         documents = load_documents_from_json('rag/informations_vinmec.json')
         texts = split_documents(documents)
         faiss_vectorstore = FAISS.from_documents(texts, embeddings)
