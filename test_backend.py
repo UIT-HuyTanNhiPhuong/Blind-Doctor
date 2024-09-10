@@ -63,7 +63,7 @@ ensemble_retriever = setup_retrievers(texts, embeddings,
 
 # Setup QA Chain
 global qa_chain
-qa_chain = create_qa_chain(llm, ensemble_retriever)
+qa_chain, PROMPT = create_qa_chain(llm, ensemble_retriever)
 
 @app.post("/question-answering/")
 async def question_answering(audio: UploadFile = File(None), text: str = None):
