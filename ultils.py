@@ -1,4 +1,4 @@
-
+from collections import Counter
 from gtts import gTTS
 import os
 from playsound import playsound
@@ -50,3 +50,18 @@ def text2speech(text):
     # tts.save(audio_stream)
     audio_stream.seek(0)  # Reset stream position
     return audio_stream.getvalue()  # Return audio data as bytes
+
+def process_sequence(sequence):
+    start_index = sequence.find("Trả lời")
+    found_sequence = sequence[start_index:]
+    found_sequence = found_sequence.replace("Trả lời", "Trả lời:")
+
+    tokens = found_sequence.split()
+    counts = Counter(tokens)
+
+    result = []
+    for token in tokens:
+        if (counts[token] <= 2 or token not in result):
+            result.append(token)
+
+    return ' '.join(result)
