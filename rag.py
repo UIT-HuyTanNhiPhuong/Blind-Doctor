@@ -12,6 +12,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndB
 from langchain_huggingface import HuggingFacePipeline
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+from langchain.retrievers.document_compressors import EmbeddingsFilter
+from langchain.retrievers import ContextualCompressionRetriever
 import numpy as np
 
 def extract_plain_text(data):
@@ -55,46 +57,55 @@ def setup_model_and_tokenizer(model_name):
     )
     return model, tokenizer
 
-def create_llm(model, tokenizer):
+def create_llm(model, tokenizer, max_token = 150):
     text_generation_pipeline = pipeline(
         "text-generation",
         model=model,
         tokenizer=tokenizer,
         max_length=1000,
+        max_new_tokens = max_token,
         truncation = True,
         torch_dtype=torch.float16,
-        device_map="auto"
+        device_map="auto",
     )
     return HuggingFacePipeline(pipeline=text_generation_pipeline)
         
 def normalize_scores(scores):
     return (scores - np.min(scores)) / (np.max(scores) - np.min(scores))
 
-
-def setup_retrievers(texts, embeddings, bm25_k, faiss_k, faiss_index_path="faiss_index"):
-    bm25_texts = [doc.page_content for doc in texts]
-    bm25_retriever = BM25Retriever.from_texts(bm25_texts, metadatas=[{"source": "bm25"}] * len(bm25_texts))
-    bm25_retriever.k = 1
-
-    # faiss_index_path = "faiss_index"
+def setup_retrievers(texts, embeddings, faiss_index_path="faiss_index"):
+    # bm25_texts = [doc.page_content for doc in texts]
+    # bm25_retriever = BM25Retriever.from_texts(bm25_texts, metadatas=[{"source": "bm25"}] * len(bm25_texts))
+    # bm25_retriever.k = 1
+    # ensemble_retriever = EnsembleRetriever(
+    #     retrievers=[bm25_retriever, faiss_retriever],
+    #     weights=[0.5, 0.5],
+    #     score_normalizer=normalize_scores
+    # )
     faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings, allow_dangerous_deserialization=True)
+    retriever = faiss_vectorstore.as_retriever()
 
-    faiss_retriever = faiss_vectorstore.as_retriever(search_kwargs={"k": 1})
-    
-    ensemble_retriever = EnsembleRetriever(
-        retrievers=[bm25_retriever, faiss_retriever],
-        weights=[0.5, 0.5],
-        score_normalizer=normalize_scores
+    embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
+    compression_retriever = ContextualCompressionRetriever(
+        base_compressor=embeddings_filter, base_retriever=retriever
     )
-    return ensemble_retriever
+
+    return compression_retriever
 
 def create_qa_chain(llm, retriever):
-    template = """Sử dụng thông tin sau đây để trả lời câu hỏi chi tiết. Nếu bạn không biết câu trả lời, hãy nói rằng bạn không biết, đừng cố tạo ra câu trả lời.
+    template = """Sử dụng thông tin sau đây, kết hợp với kiến thức riêng của bạn để trả lời câu hỏi một cách chi tiết. 
+Nếu bạn không biết câu trả lời, hãy thẳng thắn nói rằng bạn không biết, đừng cố gắng tạo ra câu trả lời. 
+Hơn nữa, hạn chế việc lặp lại từ ngữ
 
-    {context}
+{context}
 
-    Câu hỏi: {question}
-    Trả lời chi tiết:"""
+general: Hỏi
+Chào bác sĩ,
+{question}
+Khách hàng ẩn danh
+Trả lời
+
+"""
 
     PROMPT = PromptTemplate(
         template=template, input_variables=["context", "question"]
@@ -107,7 +118,7 @@ def create_qa_chain(llm, retriever):
         return_source_documents=True,
         chain_type_kwargs={"prompt": PROMPT}
     )
-    return qa_chain
+    return qa_chain, PROMPT
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="RAG model parameters")
