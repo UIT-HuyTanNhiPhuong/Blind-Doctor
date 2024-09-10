@@ -1,5 +1,5 @@
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.responses import JSONResponse
@@ -66,7 +66,7 @@ global qa_chain
 qa_chain, PROMPT = create_qa_chain(llm, ensemble_retriever)
 
 @app.post("/question-answering/")
-async def question_answering(audio: UploadFile = File(None), text: str = None):
+async def question_answering(audio: UploadFile = File(None), text: str = Form(None)):
     """
     Endpoint to generate answer from specific question-context
 
@@ -99,8 +99,7 @@ async def question_answering(audio: UploadFile = File(None), text: str = None):
     elif text:
         question = text
     else:
-        # raise HTTPException(status_code=400, detail="Please provide either audio or text input.")
-        question = 'Bác sĩ ơi, tôi bị ốm, tôi phải làm gì?' # Temporary question.
+        raise HTTPException(status_code=400, detail="Please provide either audio or text input.")
 
     # Question-Answering
     answer, sources = get_answer(question = question, qa_chain = qa_chain)

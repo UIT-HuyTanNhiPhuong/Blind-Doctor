@@ -73,24 +73,26 @@ def create_llm(model, tokenizer, max_token = 150):
 def normalize_scores(scores):
     return (scores - np.min(scores)) / (np.max(scores) - np.min(scores))
 
-def setup_retrievers(texts, embeddings, faiss_index_path="faiss_index"):
-    # bm25_texts = [doc.page_content for doc in texts]
-    # bm25_retriever = BM25Retriever.from_texts(bm25_texts, metadatas=[{"source": "bm25"}] * len(bm25_texts))
-    # bm25_retriever.k = 1
-    # ensemble_retriever = EnsembleRetriever(
-    #     retrievers=[bm25_retriever, faiss_retriever],
-    #     weights=[0.5, 0.5],
-    #     score_normalizer=normalize_scores
-    # )
-    faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings, allow_dangerous_deserialization=True)
-    retriever = faiss_vectorstore.as_retriever()
+def setup_retrievers(texts, embeddings, bm25_k, faiss_k, faiss_index_path):
+    bm25_texts = [doc.page_content for doc in texts]
+    bm25_retriever = BM25Retriever.from_texts(bm25_texts, metadatas=[{"source": "bm25"}] * len(bm25_texts))
+    bm25_retriever.k = bm25_k
 
-    embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
-    compression_retriever = ContextualCompressionRetriever(
-        base_compressor=embeddings_filter, base_retriever=retriever
+    if os.path.exists(faiss_index_path):
+        faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings, allow_dangerous_deserialization=True)
+    else:
+        faiss_vectorstore = FAISS.from_documents(texts, embeddings)
+        faiss_vectorstore.save_local(faiss_index_path)
+
+    faiss_retriever = faiss_vectorstore.as_retriever(search_kwargs={"k": faiss_k})
+
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[bm25_retriever, faiss_retriever],
+        weights=[0.5, 0.5],
+        score_normalizer=normalize_scores
     )
+    return ensemble_retriever
 
-    return compression_retriever
 
 def create_qa_chain(llm, retriever):
     template = """Sử dụng thông tin sau đây, kết hợp với kiến thức riêng của bạn để trả lời câu hỏi một cách chi tiết. 
@@ -144,27 +146,6 @@ def main():
     # Setup embeddings and retrievers
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
     
-    # Update setup_retrievers function to use argument values
-    def setup_retrievers(texts, embeddings, bm25_k, faiss_k, faiss_index_path):
-        bm25_texts = [doc.page_content for doc in texts]
-        bm25_retriever = BM25Retriever.from_texts(bm25_texts, metadatas=[{"source": "bm25"}] * len(bm25_texts))
-        bm25_retriever.k = bm25_k
-
-        if os.path.exists(faiss_index_path):
-            faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings, allow_dangerous_deserialization=True)
-        else:
-            faiss_vectorstore = FAISS.from_documents(texts, embeddings)
-            faiss_vectorstore.save_local(faiss_index_path)
-
-        faiss_retriever = faiss_vectorstore.as_retriever(search_kwargs={"k": faiss_k})
-        
-        ensemble_retriever = EnsembleRetriever(
-            retrievers=[bm25_retriever, faiss_retriever],
-            weights=[0.5, 0.5],
-            score_normalizer=normalize_scores
-        )
-        return ensemble_retriever
-
     ensemble_retriever = setup_retrievers(texts, embeddings, args.bm25_k, args.faiss_k, args.faiss_index_path)
 
     # Create QA chain
