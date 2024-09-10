@@ -49,18 +49,16 @@ llm_id = os.getenv('LLM_PATH')
 model, tokenizer = setup_model_and_tokenizer(llm_id)
 llm = create_llm(model, tokenizer)
 
-# Load and process documents
-documents = load_documents_from_json('rag/informations_vinmec.json')
-texts = split_documents(documents)
-
 # Setup embeddings and retrievers
 embedding_id = os.getenv('EMBEDDING_PATH')
 embeddings = HuggingFaceEmbeddings(model_name=embedding_id)
-ensemble_retriever = setup_retrievers(texts, embeddings, 
-                                      bm25_k = 1, 
-                                      faiss_k = 1, 
-                                      faiss_index_path = 'rag/faiss_index')
+# ensemble_retriever = setup_retrievers(texts, embeddings, 
+#                                       bm25_k = 1, 
+#                                       faiss_k = 1, 
+#                                       faiss_index_path = 'rag/faiss_index')
 
+compression_retriever = setup_retrievers(embeddings = embeddings,
+                                         faiss_index_path="rag/faiss_index")
 # Setup QA Chain
 global qa_chain
 qa_chain, PROMPT = create_qa_chain(llm, ensemble_retriever)
