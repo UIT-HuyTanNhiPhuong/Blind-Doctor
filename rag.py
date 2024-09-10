@@ -73,7 +73,7 @@ def create_llm(model, tokenizer, max_token = 150):
 def normalize_scores(scores):
     return (scores - np.min(scores)) / (np.max(scores) - np.min(scores))
 
-def setup_retrievers(texts, embeddings, faiss_index_path="faiss_index"):
+def setup_retrievers(embeddings, faiss_index_path="rag/faiss_index"):
     # bm25_texts = [doc.page_content for doc in texts]
     # bm25_retriever = BM25Retriever.from_texts(bm25_texts, metadatas=[{"source": "bm25"}] * len(bm25_texts))
     # bm25_retriever.k = 1
@@ -82,7 +82,14 @@ def setup_retrievers(texts, embeddings, faiss_index_path="faiss_index"):
     #     weights=[0.5, 0.5],
     #     score_normalizer=normalize_scores
     # )
-    faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings, allow_dangerous_deserialization=True)
+    if os.path.exists(faiss_index_path):
+        faiss_vectorstore = FAISS.load_local(faiss_index_path, embeddings, allow_dangerous_deserialization=True)
+    else:
+        documents = load_documents_from_json('rag/informations_vinmec.json')
+        texts = split_documents(documents)
+        faiss_vectorstore = FAISS.from_documents(texts, embeddings)
+        faiss_vectorstore.save_local(faiss_index_path)
+        
     retriever = faiss_vectorstore.as_retriever()
 
     embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
