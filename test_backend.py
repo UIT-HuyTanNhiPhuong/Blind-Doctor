@@ -15,7 +15,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 import PyPDF2
 import json
-from ultils import speech2text, text2speech, get_answer
+from ultils import speech2text, text2speech, get_answer, process_sequence
 import base64
 # from rag.rag_phase.load_data import load_documents, split_documents
 # from rag.rag_phase.create_vectordata import create_embeddings, create_vector_store
@@ -104,6 +104,7 @@ async def question_answering(audio: UploadFile = File(None), text: str = None):
 
     # Question-Answering
     answer, sources = get_answer(question = question, qa_chain = qa_chain)
+    # answer = process_sequence(answer)
 
     # Text-2-Speech
     audio_data = text2speech(answer)
