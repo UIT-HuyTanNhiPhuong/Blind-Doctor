@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import torch
+from langchain.retrievers import EnsembleRetriever
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
@@ -21,14 +22,13 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 ## INDEXING
-# Setup embeddings and retrievers
-persist_dir = "rag/vinmec_db"
-embeddings = HuggingFaceEmbeddings(model_name=os.getenv('EMBEDDING_PATH'))
-
 # Load and process documents
 documents = load_documents_from_json('rag/informations_vinmec.json')
 texts = split_documents(documents)
 
+# Setup embeddings and retrievers
+persist_dir = "rag/vinmec_db"
+embeddings = HuggingFaceEmbeddings(model_name=os.getenv('EMBEDDING_PATH'))
 if os.path.exists(persist_dir):
     print_color(f'[INFO] Load Vectorstore from {persist_dir}...', 'green')
     vectorstore = Chroma(persist_directory=persist_dir, embedding_function=embeddings)
@@ -37,10 +37,19 @@ else:
     vectorstore = Chroma.from_documents(documents=texts,
                                         embedding=embeddings,
                                         persist_directory=persist_dir)
+retriever = vectorstore.as_retriever()
 
-## RETRIEVAL
+question = "Tại sao lại có sự thay đổi nội tiết tố?"
+
 bm25_doc_retriever = BM25Retriever.from_documents(texts)
 bm25_doc_retriever.k = 3
+
+# Create ensamble retriever
+ensemble_retriever = EnsembleRetriever(
+    retrievers=[retriever, bm25_doc_retriever],
+    weights=[0.7, 0.3]
+)
+docs = ensemble_retriever.invoke(question)
 
 ## GENERATE ANSWER
 llm_id = os.getenv('LLM_PATH')
@@ -49,8 +58,8 @@ llm = create_llm(model_name=llm_id, max_token=300)
 
 prompt = PromptTemplate(
     input_variables=["context", "question"],
-    template="""You are a helpful assistant that try to use to context retrieved below to answer user questions. Be brief in your answers and make sure to answer the user's question using Vietnamese.
-If you don't know the answer, you can say that you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
+    template="""Bạn là một trợ lý hữu ích cố gắng sử dụng ngữ cảnh được trích dẫn dưới đây để trả lời câu hỏi của người dùng. Hãy ngắn gọn trong câu trả lời của bạn và đảm bảo trả lời câu hỏi của người dùng bằng tiếng Việt.
+Nếu bạn không biết câu trả lời, bạn có thể nói rằng bạn không biết. Đừng tạo ra câu trả lời không sử dụng các nguồn dưới đây và đừng lặp lại từ ngữ.
 
 Context: {context}
 
@@ -64,14 +73,14 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 rag_chain = (
-    {"context": bm25_doc_retriever | format_docs, "question": RunnablePassthrough()}
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
     | prompt
     | llm
     | StrOutputParser()
 )
 
 # Question
-answer = rag_chain.invoke("Tại sao lại có sự thay đổi nội tiết tố?").split("Answer: ")
+answer = rag_chain.invoke(question).split("Answer: ")
 
 print_color("Context:", 'blue')
 print(answer[0])
