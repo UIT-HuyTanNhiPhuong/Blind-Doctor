@@ -1,0 +1,8 @@
+{
+    "Speech2Text_PATH": "nguyenvulebinh/wav2vec2-base-vietnamese-250h",
+    "llm_path": "bigscience/bloom-3b",
+
+    "json_documents_path": "rag/informations_vinmec.json",
+    "vectorstore_persist_dir": "rag/vinmec_db",
+    "embedding_path": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+}

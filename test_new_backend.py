@@ -1,4 +1,5 @@
 import os
+import yaml
 from dotenv import load_dotenv
 import torch
 from langchain.retrievers import EnsembleRetriever
@@ -16,28 +17,35 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 ## PROJECT SETUP
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 load_dotenv()
 os.environ["HF_TOKEN"] = os.getenv("HUGGINGFACE_API_TOKEN")
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+# Load yaml config
+if os.path.exists('config.yaml'):
+    with open('config.yaml') as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
+    print_color(f"[INFO] Successfully loaded config.yaml", 'green')
 
 
 ## INDEXING
 # Load and process documents
-texts = create_splits_from_json('rag/informations_vinmec.json',
+texts = create_splits_from_json(config['json_documents_path'],
                                 chunk_size=256,
                                 chunk_overlap=100)
 
 # Setup embeddings and retrievers
-embeddings = HuggingFaceEmbeddings(model_name=os.getenv('EMBEDDING_PATH'))
+embeddings = HuggingFaceEmbeddings(model_name=config['embedding_path'])
 vectorstore = load_vectorstore_from_documents(documents=texts,
                                               embeddings=embeddings,
-                                              persist_dir="rag/vinmec_db")
+                                              persist_dir=config['vectorstore_persist_dir'])
 retriever = vectorstore.as_retriever()
 
 question = "Tại sao lại có sự thay đổi nội tiết tố?"
 
 ## GENERATE ANSWER
-llm_id = os.getenv('LLM_PATH')
+llm_id = config['llm_path']
 print_color(f"[INFO] Setting up LLMs ({llm_id})...", 'green')
 llm = create_llm(model_name=llm_id, max_token=300)
 
