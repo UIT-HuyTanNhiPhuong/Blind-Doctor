@@ -27,8 +27,17 @@ def load_documents_from_json(file_path):
         documents.append(doc)
     return documents
 
-def split_documents(documents, chunk_size=1000):
+def split_documents(documents, chunk_size=1000, chunk_overlap=0):
     """ Split documents into chunks """
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     texts = text_splitter.split_documents(documents)
     return texts
+
+def create_splits_from_json(file_path, chunk_size=1000, chunk_overlap=0):
+    """ Create splits from json file """
+    documents = load_documents_from_json(file_path)
+    return split_documents(documents, chunk_size, chunk_overlap)
+
+def join_docs(docs) -> str:
+    return "\n\n".join(doc.page_content for doc in docs)
+
