@@ -2,7 +2,7 @@ import os
 
 from langchain_community.vectorstores import Chroma
 
-from ultils import print_color
+from ..utils import print_color
 
 def load_vectorstore_from_documents(documents, embeddings, persist_dir):
     if os.path.exists(persist_dir):
