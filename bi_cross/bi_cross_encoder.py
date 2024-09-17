@@ -24,7 +24,9 @@ def bi_encoder_fn(query, corpus_file = 'bi_cross_encoder/corpus_embeddings.pth',
 
   # Load Corpus Embdedings
   if os.path.exists(corpus_file): corpus_embeddings = torch.load(corpus_file, map_location = torch.device(device))
-  else : corpus_embeddings = bi_encoder.encode(contents, convert_to_tensor=True, show_progress_bar=True).to(device)
+  else : 
+    corpus_embeddings = bi_encoder.encode(contents, convert_to_tensor=True, show_progress_bar=True).to(device)
+    torch.save(corpus_embeddings, corpus_file)
 
   with torch.no_grad():
     query_embedding = bi_encoder.encode(query, convert_to_tensor=True).to(device) # Embeddings
